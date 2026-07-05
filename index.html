@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Gemoy - Official Gemini API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            min-height: 100dvh;
+            display: flex;
+            align-items: flex-end; 
+            justify-content: flex-start;
+            position: relative;
+            padding: 50px;
+            color: white;
+            overflow: hidden;
+            perspective: 1000px; 
+            background: #05070c;
+            isolation: isolate;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.24;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(circle at 30% 70%, black 0%, transparent 68%);
+            animation: textureDrift 18s linear infinite;
+        }
+
+        /* Video Background */
+        .background-video {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            object-fit: cover;
+            z-index: -1;
+            transition: transform 0.2s ease-out; 
+            will-change: transform;
+            filter: saturate(1.08) contrast(1.04);
+            animation: slowBreath 14s ease-in-out infinite;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.6) 100%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .overlay::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 18% 82%, rgba(255, 222, 106, 0.18), transparent 32%),
+                linear-gradient(0deg, rgba(0, 0, 0, 0.34), transparent 45%);
+            pointer-events: none;
+        }
+
+        /* Navigasi Kiri Atas */
+        .brand {
+            position: absolute;
+            top: 40px;
+            left: 50px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+            opacity: 0.8;
+            z-index: 1;
+            animation: slideDown 900ms cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        /* Informasi Tambahan Kanan Atas */
+        .meta-info {
+            position: absolute;
+            top: 40px;
+            right: 50px;
+            text-align: right;
+            z-index: 1;
+            font-size: 12px;
+            letter-spacing: 1px;
+            line-height: 1.8;
+            opacity: 0.85;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.5);
+            animation: slideDown 900ms 120ms cubic-bezier(.2,.8,.2,1) both;
+        }
+        .meta-info span {
+            display: block;
+            font-weight: bold;
+            color: #ffde6a;
+        }
+
+        /* Konten Kiri Bawah */
+        .content {
+            max-width: 650px;
+            z-index: 1;
+            margin-bottom: 20px;
+            animation: riseIn 950ms 180ms cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        .content h1 {
+            font-size: 70px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 5px;
+            color: #fff8df;
+            text-shadow:
+                0 2px 0 rgba(121, 78, 18, 0.42),
+                0 12px 28px rgba(0, 0, 0, 0.54);
+            animation: titleGlow 4.8s ease-in-out infinite;
+        }
+
+        .content .tagline {
+            font-size: 18px;
+            font-weight: 500;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        /* Kotak Transparan Deskripsi */
+        .description-box {
+            position: relative;
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.055)),
+                rgba(32, 39, 48, 0.42);
+            backdrop-filter: blur(16px) saturate(155%);
+            -webkit-backdrop-filter: blur(16px) saturate(155%);
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.28),
+                inset 0 -18px 44px rgba(0, 0, 0, 0.16),
+                0 18px 55px rgba(0, 0, 0, 0.38);
+            max-height: 45vh;
+            overflow-y: auto;
+            transform-style: preserve-3d;
+            transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        }
+
+        .description-box::before {
+            content: "";
+            position: absolute;
+            inset: 1px;
+            border-radius: 15px;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.22), transparent 36%, rgba(255, 222, 106, 0.08) 72%, transparent);
+            pointer-events: none;
+        }
+
+        .description-box:hover {
+            transform: translateY(-4px) rotateX(1.2deg);
+            border-color: rgba(255, 222, 106, 0.42);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.34),
+                inset 0 -18px 44px rgba(0, 0, 0, 0.16),
+                0 24px 70px rgba(0, 0, 0, 0.46);
+        }
+
+        .description-box::-webkit-scrollbar { width: 6px; }
+        .description-box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
+
+        .description-box p { font-size: 14px; line-height: 1.6; margin-bottom: 18px; opacity: 0.95; }
+        .description-box h2 {
+            font-size: 15px; margin-top: 15px; margin-bottom: 10px; text-transform: uppercase;
+            letter-spacing: 1px; color: #ffde6a; border-bottom: 1px solid rgba(255, 255, 255, 0.2); padding-bottom: 4px;
+        }
+        .description-box ul { list-style-type: none; margin-bottom: 15px; }
+        .description-box li { font-size: 13.5px; line-height: 1.6; margin-bottom: 10px; padding-left: 20px; position: relative; }
+        .description-box li::before { content: "✦"; position: absolute; left: 0; color: #ffde6a; font-size: 12px; }
+
+        /* WIDGET CHATBOT OFFICIAL GEMINI API */
+        .ai-chat-container {
+            position: absolute;
+            bottom: 40px;
+            right: 50px;
+            width: 380px;
+            height: 450px;
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.035)),
+                rgba(15, 23, 42, 0.86);
+            backdrop-filter: blur(18px) saturate(150%);
+            -webkit-backdrop-filter: blur(18px) saturate(150%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                inset 0 -16px 38px rgba(0, 0, 0, 0.28),
+                0 20px 60px rgba(0, 0, 0, 0.62);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            animation: chatPop 920ms 320ms cubic-bezier(.2,.8,.2,1) both;
+            transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+
+        .ai-chat-container:hover {
+            transform: translateY(-5px) rotateX(1deg) rotateY(-1deg);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.24),
+                inset 0 -16px 38px rgba(0, 0, 0, 0.28),
+                0 26px 72px rgba(0, 0, 0, 0.68);
+        }
+
+        .chat-header {
+            position: relative;
+            background:
+                linear-gradient(90deg, rgba(79, 70, 229, 0.96), rgba(6, 182, 212, 0.96)),
+                #06b6d4;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -10px 24px rgba(0, 0, 0, 0.18);
+            overflow: hidden;
+        }
+
+        .chat-header::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: -45%;
+            width: 40%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+            transform: skewX(-18deg);
+            animation: headerSheen 4.6s ease-in-out infinite;
+        }
+        .chat-header .dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulseDot 1.8s ease-in-out infinite;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            animation: bubbleIn 280ms cubic-bezier(.2,.8,.2,1) both;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        }
+        .message.ai {
+            background:
+                linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .message.user {
+            background: linear-gradient(145deg, #5b53f1, #3f35c9);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                0 8px 18px rgba(63, 53, 201, 0.32);
+        }
+
+        .chat-input-area {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .chat-input-area input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            font-size: 13px;
+            outline: none;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
+            transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+        }
+        .chat-input-area input:focus {
+            background: rgba(255, 255, 255, 0.13);
+            border-color: rgba(255, 222, 106, 0.54);
+            box-shadow:
+                inset 0 2px 10px rgba(0, 0, 0, 0.22),
+                0 0 0 3px rgba(255, 222, 106, 0.12);
+        }
+        .chat-input-area button {
+            background: linear-gradient(145deg, #18c9e7, #0596ba);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.36),
+                inset 0 -8px 15px rgba(0, 0, 0, 0.2),
+                0 8px 18px rgba(6, 182, 212, 0.28);
+            transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
+        }
+        .chat-input-area button:hover {
+            opacity: 0.96;
+            transform: translateY(-1px);
+        }
+        .chat-input-area button:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow:
+                inset 0 2px 8px rgba(0, 0, 0, 0.28),
+                0 4px 10px rgba(6, 182, 212, 0.18);
+        }
+
+        @keyframes riseIn {
+            from { opacity: 0; transform: translateY(38px) scale(0.98); filter: blur(10px); }
+            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-18px); }
+            to { opacity: 0.85; transform: translateY(0); }
+        }
+
+        @keyframes chatPop {
+            from { opacity: 0; transform: translateY(34px) rotateX(8deg) scale(0.96); filter: blur(8px); }
+            to { opacity: 1; transform: translateY(0) rotateX(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes bubbleIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 8px #10b981; }
+            50% { transform: scale(1.35); box-shadow: 0 0 18px #10b981; }
+        }
+
+        @keyframes headerSheen {
+            0%, 58% { left: -45%; }
+            78%, 100% { left: 115%; }
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 2px 0 rgba(121, 78, 18, 0.42), 0 12px 28px rgba(0, 0, 0, 0.54); }
+            50% { text-shadow: 0 2px 0 rgba(121, 78, 18, 0.5), 0 16px 38px rgba(255, 222, 106, 0.22), 0 18px 42px rgba(0, 0, 0, 0.55); }
+        }
+
+        @keyframes slowBreath {
+            0%, 100% { filter: saturate(1.08) contrast(1.04); }
+            50% { filter: saturate(1.18) contrast(1.08); }
+        }
+
+        @keyframes textureDrift {
+            from { background-position: 0 0, 0 0; }
+            to { background-position: 96px 48px, 48px 96px; }
+        }
+
+        @media (max-width: 980px) {
+            body {
+                align-items: flex-start;
+                overflow-y: auto;
+                padding: 96px 22px 28px;
+            }
+
+            .brand {
+                top: 24px;
+                left: 24px;
+            }
+
+            .meta-info {
+                top: 22px;
+                right: 24px;
+            }
+
+            .content {
+                max-width: none;
+                width: 100%;
+                margin-bottom: 500px;
+            }
+
+            .content h1 {
+                font-size: clamp(44px, 16vw, 70px);
+            }
+
+            .description-box {
+                max-height: none;
+            }
+
+            .ai-chat-container {
+                position: fixed;
+                left: 18px;
+                right: 18px;
+                bottom: 18px;
+                width: auto;
+                height: 420px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 1ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 1ms !important;
+            }
+
+            .background-video {
+                transform: none !important;
+            }
+        }
+    </style>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.run/@google/genai"
+        }
+      }
+    </script>
+</head>
+<body>
+
+    <video class="background-video" id="bgVideo" autoplay loop muted playsinline>
+        <source src="tolong_buatkan_gambarnya_gerak.mp4" type="video/mp4">
+        Browser kamu tidak mendukung video latar belakang.
+    </video>
+
+    <div class="overlay"></div>
+
+    <div class="brand">CHARACTER STORY</div>
+
+    <div class="meta-info">
+        SPECIES: <span>Felis catus</span>
+        FAMILY: <span>Felidae</span>
+        STATUS: <span>Domesticated</span>
+    </div>
+
+    <div class="content">
+        <h1>Gemoy</h1>
+        <p class="tagline">The cutest being on a planet</p>
+
+        <div class="description-box">
+            <p>Kucing adalah salah satu hewan mamalia karnivora yang paling populer dijadikan hewan peliharaan di seluruh dunia. Berasal dari keluarga <em>Felidae</em>, kucing telah hidup berdampingan dengan manusia sejak ribuan tahun lalu, awalnya digunakan untuk membasmi hama seperti tikus.</p>
+            
+            <h2>1. Ciri Fisik & Kemampuan Berburu</h2>
+            <ul>
+                <li><strong>Penglihatan Malam:</strong> Kucing memiliki kemampuan melihat yang sangat baik dalam kegelapan berkat lapisan khusus di matanya yang disebut <em>tapetum lucidum</em>.</li>
+                <li><strong>Kumis yang Sensitif:</strong> Kumis kucing (<em>vibrissae</em>) berfungsi sebagai radar alami untuk mendeteksi perubahan angin, mengukur lebar celah, dan membantu navigasi.</li>
+                <li><strong>Tubuh yang Lentur:</strong> Struktur tulang selangka kucing yang tidak menempel pada tulang lainnya membuat mereka sangat fleksibel dan ahli dalam melompat atau memanjat.</li>
+            </ul>
+
+            <h2>2. Perilaku & Komunikasi</h2>
+            <ul>
+                <li><strong>Mendengkur (Purring):</strong> Kucing biasanya mendengkur saat merasa nyaman, aman, atau ketika mereka sedang menenangkan diri.</li>
+                <li><strong>Bahasa Tubuh:</strong> Mereka berkomunikasi melalui gerakan ekor, posisi telinga, dan suara (seperti mengeong yang biasanya hanya digunakan untuk berinteraksi dengan manusia).</li>
+                <li><strong>Hewan Teritorial:</strong> Kucing sangat menjaga wilayah kekuasaannya dan sering menandai areanya dengan aroma tubuh mereka melalui kelenjar di pipi atau cakar.</li>
+            </ul>
+
+            <h2>3. Perawatan Sebagai Peliharaan</h2>
+            <p>Kucing dikenal sebagai hewan yang relatif mandiri karena mereka membersihkan diri sendiri (<em>grooming</em>) menggunakan lidahnya yang kasar. Namun, sebagai peliharaan, mereka tetap membutuhkan nutrisi yang tepat (makanan tinggi protein/daging), vaksinasi berkala, serta lingkungan yang bersih untuk tumbuh dengan sehat.</p>
+        </div>
+    </div>
+
+    <div class="ai-chat-container">
+        <div class="chat-header">
+            <div class="dot"></div>
+            <span>Gemini 2.5 Flash - Live API</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">Halo! Aku Gemini AI resmi dari Google yang sudah terhubung langsung dengan sistem API. Silakan tanyakan hal apa saja secara random, aku akan menjawabnya langsung secara cerdas! 🚀</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Tanya pertanyaan random ke Gemini API...">
+            <button id="sendBtn">Kirim</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // 1. Integrasi Google Gemini AI SDK Resmi
+        import { GoogleGenAI } from '@google/genai';
+
+        // =========================================================================
+        // PENTING: Ganti 'MASUKKAN_API_KEY_GEMINI_KAMU' dengan API Key asli kamu!
+        // =========================================================================
+        const GEMINI_API_KEY = 'AQ.Ab8RN6IpfMTgUB-OWX9W-B7395xnoOfW34qHb8yK6lrzq1zQEQ'; 
+        
+        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+        const chatMessages = document.getElementById('chatMessages');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Fungsi Kirim Pesan ke API Gemini
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // Jika API Key belum diganti oleh pengguna
+            if (GEMINI_API_KEY === 'AQ.Ab8RN6IpfMTgUB-OWX9W-B7395xnoOfW34qHb8yK6lrzq1zQEQ') {
+                appendMessage(text, 'user');
+                chatInput.value = '';
+                appendMessage('⚠️ Ups! Kamu belum memasukkan API Key Gemini di dalam kode script HTML kamu. Silakan dapatkan API Key gratis dari Google AI Studio dan tempel di baris kode nomor 182 ya!', 'ai');
+                return;
+            }
+
+            appendMessage(text, 'user');
+            chatInput.value = '';
+
+            // Buat status loading
+            const typingIndicator = document.createElement('div');
+            typingIndicator.classList.add('message', 'ai');
+            typingIndicator.id = 'typing';
+            typingIndicator.innerText = 'Gemini sedang memikirkan jawaban... ⏳';
+            chatMessages.appendChild(typingIndicator);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            try {
+                // Panggil API resmi Gemini 2.5 Flash menggunakan library Google Gen AI terbaru
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: text,
+                });
+
+                document.getElementById('typing').remove();
+                
+                if (response.text) {
+                    appendMessage(response.text, 'ai');
+                } else {
+                    appendMessage('Maaf, sistem mengembalikan respon kosong. Coba tanya lagi ya.', 'ai');
+                }
+            } catch (error) {
+                console.error(error);
+                if (document.getElementById('typing')) document.getElementById('typing').remove();
+                appendMessage('Gagal terhubung ke Gemini API. Pastikan API Key kamu valid dan koneksi internet stabil!', 'ai');
+            }
+        }
+
+        // Listener Tombol & Enter
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function appendMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender);
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 2. Efek 3D Parallax Video Mousemove (Tetap dipertahankan)
+        const video = document.getElementById('bgVideo');
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            const rotateX = -(mouseY - centerY) / 25; 
+            const rotateY = (mouseX - centerX) / 25;
+            const moveX = (mouseX - centerX) / 40;
+            const moveY = (mouseY - centerY) / 40;
+
+            video.style.transform = `translate3d(${moveX}px, ${moveY}px, 0) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+        document.addEventListener('mouseleave', () => {
+            video.style.transform = `translate3d(0px, 0px, 0) rotateX(0deg) rotateY(0deg)`;
+        });
+    </script>
+
+</body>
+</html>
